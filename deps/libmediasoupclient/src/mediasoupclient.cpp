@@ -29,7 +29,7 @@ namespace mediasoupclient
     	rtc::LogMessage::LogTimestamps();
     	rtc::LogMessage::LogThreads();
     
-    	log_sink.reset(new rtc::FileRotatingLogSink("./", "webrtc_logs", kDefaultMaxLogFileSize, 10));
+    	log_sink.reset(new rtc::FileRotatingLogSink("./build", "webrtc_logs", kDefaultMaxLogFileSize, 10));
 	    if (log_sink->Init() == false) {
 	        RTC_LOG(LS_ERROR) << __FUNCTION__ << "Failed to open webrtc log file";
 	        log_sink.reset();

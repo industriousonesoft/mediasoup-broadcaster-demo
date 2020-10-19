@@ -413,7 +413,7 @@ void Broadcaster::CreateSendTransport(bool enableAudio, bool useSimulcast)
     //Send\Receiver Transport与Video\Audio Source共用一个peer connection factory，否则mediasoupclient内部会创建一个，覆盖自定义的FakeAudioCaptureModule
 	mediasoupclient::PeerConnection::Options options;
 	options.factory = sharedFactory();
-
+	
 	this->sendTransport = this->device.CreateSendTransport(
 	  this,
 	  sendTransportId,

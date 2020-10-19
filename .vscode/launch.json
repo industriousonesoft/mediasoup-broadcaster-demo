@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(lldb) Launch",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/broadcaster",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "env": {
+               "SERVER_URL": "https://v3demo.mediasoup.org:4443",
+               "ROOM_ID": "wnugtq7c"
+            }
+            //安装了codelldb插件，因此不需要配置下面参数
+            //"MIMode": "lldb", //使用的MI模式：gdb 或 lldb
+            //"miDebuggerPath": 
+
+        }
+    ]
+}

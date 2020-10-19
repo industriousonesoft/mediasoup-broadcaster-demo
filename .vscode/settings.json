@@ -1,0 +1,24 @@
+{
+    //quick debug模式：使用底部工具栏的灰虫子进行配置与调试
+    //但是在这种模式下，目前暂时不知道如何配置environment variable，所以使用第二种launch.json的方式
+    //两种模式都需要配置cmake.configureSettings，因为都需要通过cmake进行编译，二者的不同在于调试方式
+    "cmake.configureSettings": {
+        "LIBWEBRTC_INCLUDE_PATH": "/Users/markcao/Documents/Webrtc/static_lib/include",
+        "LIBWEBRTC_BINARY_PATH": "/Users/markcao/Documents/Webrtc/src/out/mac_static_lib/obj",
+        "OPENSSL_INCLUDE_DIR": "/usr/local/Cellar/openssl@1.1/1.1.1g/include",
+        "CMAKE_USE_OPENSSL": "ON",
+        "USE_SYSTEM_CURL": "ON",
+        "BUILD_CPR_TESTS": "OFF",
+        "USE_SYSTEM_GTEST": "OFF"
+    },
+
+    //配置调试信息
+    "cmake.debugConfig":{
+        "stopAtEntry": false, //是否在程序入口处暂停执行，相当于在程序第一行设置断点
+        "MIMode": "lldb", //使用的MI模式：gdb 或 lldb
+        "miDebuggerPath": "/Users/markcao/.vscode/extensions/ms-vscode.cpptools-1.0.1/debugAdapters/lldb-mi/bin/lldb-mi",
+        "args": []
+    },
+    
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
+}
