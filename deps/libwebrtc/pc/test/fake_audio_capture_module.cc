@@ -11,6 +11,7 @@
 #include "pc/test/fake_audio_capture_module.h"
 
 #include <string.h>
+#include <iostream>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
@@ -47,7 +48,9 @@ FakeAudioCaptureModule::FakeAudioCaptureModule()
       current_mic_level_(kMaxVolume),
       started_(false),
       next_frame_time_(0),
-      frames_received_(0) {}
+      frames_received_(0) {
+  process_thread_checker_.Detach();
+}
 
 FakeAudioCaptureModule::~FakeAudioCaptureModule() {
   if (process_thread_) {
@@ -58,6 +61,7 @@ FakeAudioCaptureModule::~FakeAudioCaptureModule() {
 rtc::scoped_refptr<FakeAudioCaptureModule> FakeAudioCaptureModule::Create() {
   rtc::scoped_refptr<FakeAudioCaptureModule> capture_module(
       new rtc::RefCountedObject<FakeAudioCaptureModule>());
+  std::cout << "[INFO] FakeAudioCaptureModule::Create()" << std::endl;
   if (!capture_module->Initialize()) {
     return nullptr;
   }
@@ -65,7 +69,7 @@ rtc::scoped_refptr<FakeAudioCaptureModule> FakeAudioCaptureModule::Create() {
 }
 
 int FakeAudioCaptureModule::frames_received() const {
-  rtc::CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   return frames_received_;
 }
 
@@ -77,7 +81,8 @@ int32_t FakeAudioCaptureModule::ActiveAudioLayer(
 
 int32_t FakeAudioCaptureModule::RegisterAudioCallback(
     webrtc::AudioTransport* audio_callback) {
-  rtc::CritScope cs(&crit_callback_);
+  std::cout << "[INFO] FakeAudioCaptureModule::RegisterAudioCallback()" << std::endl;
+  webrtc::MutexLock lock(&mutex_);
   audio_callback_ = audio_callback;
   return 0;
 }
@@ -168,6 +173,7 @@ int32_t FakeAudioCaptureModule::RecordingIsAvailable(bool* /*available*/) {
 }
 
 int32_t FakeAudioCaptureModule::InitRecording() {
+  std::cout << "[INFO] FakeAudioCaptureModule::InitRecording()" << std::endl;
   rec_is_initialized_ = true;
   return 0;
 }
@@ -181,7 +187,7 @@ int32_t FakeAudioCaptureModule::StartPlayout() {
     return -1;
   }
   {
-    rtc::CritScope cs(&crit_);
+    webrtc::MutexLock lock(&mutex_);
     playing_ = true;
   }
   bool start = true;
@@ -192,7 +198,7 @@ int32_t FakeAudioCaptureModule::StartPlayout() {
 int32_t FakeAudioCaptureModule::StopPlayout() {
   bool start = false;
   {
-    rtc::CritScope cs(&crit_);
+    webrtc::MutexLock lock(&mutex_);
     playing_ = false;
     start = ShouldStartProcessing();
   }
@@ -201,16 +207,17 @@ int32_t FakeAudioCaptureModule::StopPlayout() {
 }
 
 bool FakeAudioCaptureModule::Playing() const {
-  rtc::CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   return playing_;
 }
 
 int32_t FakeAudioCaptureModule::StartRecording() {
+  std::cout << "[INFO] FakeAudioCaptureModule::StartRecording()" << std::endl;
   if (!rec_is_initialized_) {
     return -1;
   }
   {
-    rtc::CritScope cs(&crit_);
+    webrtc::MutexLock lock(&mutex_);
     recording_ = true;
   }
   bool start = true;
@@ -219,9 +226,10 @@ int32_t FakeAudioCaptureModule::StartRecording() {
 }
 
 int32_t FakeAudioCaptureModule::StopRecording() {
+  std::cout << "[INFO] FakeAudioCaptureModule::StopRecording()" << std::endl;
   bool start = false;
   {
-    rtc::CritScope cs(&crit_);
+    webrtc::MutexLock lock(&mutex_);
     recording_ = false;
     start = ShouldStartProcessing();
   }
@@ -230,7 +238,8 @@ int32_t FakeAudioCaptureModule::StopRecording() {
 }
 
 bool FakeAudioCaptureModule::Recording() const {
-  rtc::CritScope cs(&crit_);
+  std::cout << "[INFO] FakeAudioCaptureModule::Recording()" << std::endl;
+  webrtc::MutexLock lock(&mutex_);
   return recording_;
 }
 
@@ -288,13 +297,13 @@ int32_t FakeAudioCaptureModule::MicrophoneVolumeIsAvailable(
 }
 
 int32_t FakeAudioCaptureModule::SetMicrophoneVolume(uint32_t volume) {
-  rtc::CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   current_mic_level_ = volume;
   return 0;
 }
 
 int32_t FakeAudioCaptureModule::MicrophoneVolume(uint32_t* volume) const {
-  rtc::CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   *volume = current_mic_level_;
   return 0;
 }
@@ -386,6 +395,7 @@ int32_t FakeAudioCaptureModule::PlayoutDelay(uint16_t* delay_ms) const {
 }
 
 void FakeAudioCaptureModule::OnMessage(rtc::Message* msg) {
+  //std::cout << "[INFO] FakeAudioCaptureModule::OnMessage()" << " msg id: " << msg->message_id <<std::endl;
   switch (msg->message_id) {
     case MSG_START_PROCESS:
       StartProcessP();
@@ -448,29 +458,34 @@ void FakeAudioCaptureModule::UpdateProcessing(bool start) {
     if (process_thread_) {
       process_thread_->Stop();
       process_thread_.reset(nullptr);
+      process_thread_checker_.Detach();
     }
+    webrtc::MutexLock lock(&mutex_);
     started_ = false;
   }
 }
 
 void FakeAudioCaptureModule::StartProcessP() {
-  RTC_CHECK(process_thread_->IsCurrent());
-  if (started_) {
-    // Already started.
-    return;
+  RTC_DCHECK_RUN_ON(&process_thread_checker_);
+  {
+    webrtc::MutexLock lock(&mutex_);
+    if (started_) {
+      // Already started.
+      return;
+    }
   }
   ProcessFrameP();
 }
 
 void FakeAudioCaptureModule::ProcessFrameP() {
-  RTC_CHECK(process_thread_->IsCurrent());
-  if (!started_) {
-    next_frame_time_ = rtc::TimeMillis();
-    started_ = true;
-  }
-
+  RTC_DCHECK_RUN_ON(&process_thread_checker_);
   {
-    rtc::CritScope cs(&crit_);
+    webrtc::MutexLock lock(&mutex_);
+    if (!started_) {
+      next_frame_time_ = rtc::TimeMillis();
+      started_ = true;
+    }
+
     // Receive and send frames every kTimePerFrameMs.
     if (playing_) {
       ReceiveFrameP();
@@ -488,24 +503,22 @@ void FakeAudioCaptureModule::ProcessFrameP() {
 }
 
 void FakeAudioCaptureModule::ReceiveFrameP() {
-  RTC_CHECK(process_thread_->IsCurrent());
-  {
-    rtc::CritScope cs(&crit_callback_);
-    if (!audio_callback_) {
-      return;
-    }
-    ResetRecBuffer();
-    size_t nSamplesOut = 0;
-    int64_t elapsed_time_ms = 0;
-    int64_t ntp_time_ms = 0;
-    if (audio_callback_->NeedMorePlayData(
-            kNumberSamples, kNumberBytesPerSample, kNumberOfChannels,
-            kSamplesPerSecond, rec_buffer_, nSamplesOut, &elapsed_time_ms,
-            &ntp_time_ms) != 0) {
-      RTC_NOTREACHED();
-    }
-    RTC_CHECK(nSamplesOut == kNumberSamples);
+  RTC_DCHECK_RUN_ON(&process_thread_checker_);
+  if (!audio_callback_) {
+    return;
   }
+  ResetRecBuffer();
+  size_t nSamplesOut = 0;
+  int64_t elapsed_time_ms = 0;
+  int64_t ntp_time_ms = 0;
+  if (audio_callback_->NeedMorePlayData(kNumberSamples, kNumberBytesPerSample,
+                                        kNumberOfChannels, kSamplesPerSecond,
+                                        rec_buffer_, nSamplesOut,
+                                        &elapsed_time_ms, &ntp_time_ms) != 0) {
+    RTC_NOTREACHED();
+  }
+  RTC_CHECK(nSamplesOut == kNumberSamples);
+
   // The SetBuffer() function ensures that after decoding, the audio buffer
   // should contain samples of similar magnitude (there is likely to be some
   // distortion due to the audio pipeline). If one sample is detected to
@@ -513,25 +526,23 @@ void FakeAudioCaptureModule::ReceiveFrameP() {
   // has been received from the remote side (i.e. faked frames are not being
   // pulled).
   if (CheckRecBuffer(kHighSampleValue)) {
-    rtc::CritScope cs(&crit_);
     ++frames_received_;
   }
 }
 
 void FakeAudioCaptureModule::SendFrameP() {
-  RTC_CHECK(process_thread_->IsCurrent());
-  rtc::CritScope cs(&crit_callback_);
+  RTC_DCHECK_RUN_ON(&process_thread_checker_);
   if (!audio_callback_) {
     return;
   }
+  //std::cout << "[INFO] FakeAudioCaptureModule::SendFrameP()" << std::endl;
   bool key_pressed = false;
-  uint32_t current_mic_level = 0;
-  MicrophoneVolume(&current_mic_level);
+  uint32_t current_mic_level = current_mic_level_;
   if (audio_callback_->RecordedDataIsAvailable(
           send_buffer_, kNumberSamples, kNumberBytesPerSample,
           kNumberOfChannels, kSamplesPerSecond, kTotalDelayMs, kClockDriftMs,
           current_mic_level, key_pressed, current_mic_level) != 0) {
     RTC_NOTREACHED();
   }
-  SetMicrophoneVolume(current_mic_level);
+  current_mic_level_ = current_mic_level;
 }

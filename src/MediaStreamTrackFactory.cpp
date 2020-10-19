@@ -27,7 +27,7 @@ static rtc::Thread* workerThread;
 
 static void createFactory()
 {
-	networkThread   = rtc::Thread::Create().release();
+	networkThread   = rtc::Thread::CreateWithSocketServer().release();//rtc::Thread::Create().release();
 	signalingThread = rtc::Thread::Create().release();
 	workerThread    = rtc::Thread::Create().release();
 
@@ -42,6 +42,7 @@ static void createFactory()
 
 	webrtc::PeerConnectionInterface::RTCConfiguration config;
 
+    //自定义ADM，可以传入自定义的音频数据
 	auto fakeAudioCaptureModule = FakeAudioCaptureModule::Create();
 	if (!fakeAudioCaptureModule)
 	{
@@ -64,6 +65,12 @@ static void createFactory()
 	{
 		MSC_THROW_ERROR("error ocurred creating peerconnection factory");
 	}
+}
+
+rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> sharedFactory() {
+	if (!factory)
+		createFactory();
+	return factory;
 }
 
 // Audio track creation.

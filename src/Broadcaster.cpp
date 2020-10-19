@@ -410,13 +410,18 @@ void Broadcaster::CreateSendTransport(bool enableAudio, bool useSimulcast)
 
 	auto sendTransportId = response["id"].get<std::string>();
 
+    //Send\Receiver Transport与Video\Audio Source共用一个peer connection factory，否则mediasoupclient内部会创建一个，覆盖自定义的FakeAudioCaptureModule
+	mediasoupclient::PeerConnection::Options options;
+	options.factory = sharedFactory();
+
 	this->sendTransport = this->device.CreateSendTransport(
 	  this,
 	  sendTransportId,
 	  response["iceParameters"],
 	  response["iceCandidates"],
 	  response["dtlsParameters"],
-	  response["sctpParameters"]);
+	  response["sctpParameters"],
+	  &options);
 
 	///////////////////////// Create Audio Producer //////////////////////////
 
@@ -555,20 +560,24 @@ void Broadcaster::CreateRecvTransport()
 
 	auto sctpParameters = response["sctpParameters"];
 
+	mediasoupclient::PeerConnection::Options options;
+	options.factory = sharedFactory();
+
 	this->recvTransport = this->device.CreateRecvTransport(
 	  this,
 	  recvTransportId,
 	  response["iceParameters"],
 	  response["iceCandidates"],
 	  response["dtlsParameters"],
-	  sctpParameters);
+	  sctpParameters,
+	  &options);
 
 	this->CreateDataConsumer();
 }
 
 void Broadcaster::OnMessage(mediasoupclient::DataConsumer* dataConsumer, const webrtc::DataBuffer& buffer)
 {
-	std::cout << "[INFO] Broadcaster::OnMessage()" << std::endl;
+	std::cout << "[INFO] Broadcaster::OnMessage()" << " Label: " << dataConsumer->GetLabel() << std::endl;
 	if (dataConsumer->GetLabel() == "chat")
 	{
 		std::string s = std::string(buffer.data.data<char>(), buffer.data.size());

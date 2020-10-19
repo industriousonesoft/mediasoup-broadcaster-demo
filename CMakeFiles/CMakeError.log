@@ -1,0 +1,16 @@
+Determining if the function connect exists in the socket;dl failed with the following output:
+Change Dir: /Users/markcao/Documents/Github_Codes/mediasoup-broadcaster-demo/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_1f746/fast && /Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_1f746.dir/build.make CMakeFiles/cmTC_1f746.dir/build
+Building C object CMakeFiles/cmTC_1f746.dir/CheckFunctionExists.c.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=connect -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk   -o CMakeFiles/cmTC_1f746.dir/CheckFunctionExists.c.o   -c /usr/local/Cellar/cmake/3.17.3/share/cmake/Modules/CheckFunctionExists.c
+Linking C executable cmTC_1f746
+/usr/local/Cellar/cmake/3.17.3/bin/cmake -E cmake_link_script CMakeFiles/cmTC_1f746.dir/link.txt --verbose=1
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=connect -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_1f746.dir/CheckFunctionExists.c.o  -o cmTC_1f746  -lsocket -ldl 
+ld: library not found for -lsocket
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+make[1]: *** [cmTC_1f746] Error 1
+make: *** [cmTC_1f746/fast] Error 2
+
+
+
