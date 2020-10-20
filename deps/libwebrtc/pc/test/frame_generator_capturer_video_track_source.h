@@ -19,6 +19,7 @@
 #include "api/test/create_frame_generator.h"
 #include "pc/video_track_source.h"
 #include "test/frame_generator_capturer.h"
+#include "test/h264_frame_generator_capturer_mac.h"
 
 namespace webrtc {
 
@@ -55,6 +56,15 @@ class FrameGeneratorCapturerVideoTrackSource : public VideoTrackSource {
     video_capturer_->Init();
   }
 
+  FrameGeneratorCapturerVideoTrackSource(Config config, 
+                                         Clock* clock)
+      : VideoTrackSource(false /* remote */),
+        task_queue_factory_(CreateDefaultTaskQueueFactory()),
+        is_screencast_(false) {
+     const std::string file_path = std::string("/Users/markcao/Desktop/h264Files/xbox-2.h264");
+     h264_video_capturer_ = std::make_unique<test::H264FrameGeneratorCapturer>(clock, file_path, config.frames_per_second);
+  }
+
   FrameGeneratorCapturerVideoTrackSource(
       std::unique_ptr<test::FrameGeneratorCapturer> video_capturer,
       bool is_screencast)
@@ -64,20 +74,34 @@ class FrameGeneratorCapturerVideoTrackSource : public VideoTrackSource {
 
   ~FrameGeneratorCapturerVideoTrackSource() = default;
 
-  void Start() { SetState(kLive); }
+  void Start() { 
+    SetState(kLive); 
+    if(h264_video_capturer_) {
+      h264_video_capturer_->Start();
+    }
+  }
 
-  void Stop() { SetState(kMuted); }
+  void Stop() { 
+    SetState(kMuted); 
+    if(h264_video_capturer_) {
+      h264_video_capturer_->Stop();
+    }
+  }
 
   bool is_screencast() const override { return is_screencast_; }
 
  protected:
   rtc::VideoSourceInterface<VideoFrame>* source() override {
+    if(h264_video_capturer_) {
+        return h264_video_capturer_.get();
+    }
     return video_capturer_.get();
   }
 
  private:
   const std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   std::unique_ptr<test::FrameGeneratorCapturer> video_capturer_;
+  std::unique_ptr<test::H264FrameGeneratorCapturer> h264_video_capturer_;
   const bool is_screencast_;
 };
 

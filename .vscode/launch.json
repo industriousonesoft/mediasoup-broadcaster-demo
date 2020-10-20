@@ -13,7 +13,7 @@
             "cwd": "${workspaceFolder}",
             "env": {
                "SERVER_URL": "https://v3demo.mediasoup.org:4443",
-               "ROOM_ID": "wnugtq7c"
+               "ROOM_ID": "nwodj69b"
             }
             //安装了codelldb插件，因此不需要配置下面参数
             //"MIMode": "lldb", //使用的MI模式：gdb 或 lldb

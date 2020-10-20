@@ -177,8 +177,7 @@ bool FrameGeneratorCapturer::Init() {
 void FrameGeneratorCapturer::InsertFrame() {
   MutexLock lock(&lock_);
   if (sending_) {
-    FrameGeneratorInterface::VideoFrameData frame_data =
-        frame_generator_->NextFrame();
+    FrameGeneratorInterface::VideoFrameData frame_data = frame_generator_->NextFrame();
     // TODO(srte): Use more advanced frame rate control to allow arbritrary
     // fractions.
     int decimation =

@@ -16,6 +16,7 @@ if(APPLE)
 	set(SOURCE_FILES ${SOURCE_FILES}
 		test/testsupport/ios_file_utils.mm
 		test/testsupport/mac_file_utils.mm
+		test/h264_frame_generator_capturer_mac.mm
 	)
 endif(APPLE)
 
@@ -29,7 +30,20 @@ target_include_directories(webrtc_broadcaster PRIVATE ${PROJECT_SOURCE_DIR}/deps
 target_include_directories(webrtc_broadcaster PUBLIC
 	"${LIBWEBRTC_INCLUDE_PATH}"
 	"${LIBWEBRTC_INCLUDE_PATH}/third_party/abseil-cpp"
+	"${LIBWEBRTC_INCLUDE_PATH}/sdk/objc/base"
 )
+
+if(APPLE)
+	find_library(CORE_FOUNDATION Foundation)
+	find_library(CORE_VIDEO CoreVideo)
+	find_library(VIDEO_TOOLBOX VideoToolbox)
+
+	target_link_libraries(webrtc_broadcaster PRIVATE 
+		${CORE_FOUNDATION}
+		${CORE_VIDEO}
+		${VIDEO_TOOLBOX}
+	)
+endif(APPLE)
 
 # Compile definitions for libwebrtc.
 target_compile_definitions(webrtc_broadcaster PUBLIC
@@ -37,4 +51,6 @@ target_compile_definitions(webrtc_broadcaster PUBLIC
 	$<$<PLATFORM_ID:Windows>:WEBRTC_WIN>
 	$<$<PLATFORM_ID:Darwin>:WEBRTC_MAC>
 )
+
+
 

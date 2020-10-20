@@ -24,7 +24,7 @@ namespace mediasoupclient
 		rtc::InitRandom(rtc::Time());
 
 		//Init file log sink
-		int log_level = rtc::LS_VERBOSE;
+		int log_level = rtc::LS_ERROR;//LS_VERBOSE
     	rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)log_level);
     	rtc::LogMessage::LogTimestamps();
     	rtc::LogMessage::LogThreads();
